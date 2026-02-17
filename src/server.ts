@@ -1,20 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
+import { env } from './lib/env.js';
+import app from './app.js';
 import pino from 'pino';
 
 const logger = pino();
-const app = express();
-const port = process.env.PORT || 3001;
 
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
+app.listen(env.PORT, () => {
+  logger.info(`Server running on port ${env.PORT}`);
 });
