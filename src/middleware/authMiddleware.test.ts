@@ -1,14 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authMiddleware } from './authMiddleware.js';
 import jwt from 'jsonwebtoken';
-import { env } from '../lib/env.js';
 
 vi.mock('jsonwebtoken');
-vi.mock('../lib/env.js', () => ({
-  env: {
-    SUPABASE_JWT_SECRET: 'test-secret',
-    ALLOWED_ORIGIN: 'http://localhost:3000'
-  }
+vi.mock('../lib/jwks.js', () => ({
+  getSupabasePublicKey: vi.fn().mockResolvedValue('mock-public-key'),
 }));
 
 describe('authMiddleware', () => {
@@ -28,8 +24,8 @@ describe('authMiddleware', () => {
     vi.clearAllMocks();
   });
 
-  it('should return 401 if authorization header is missing', () => {
-    authMiddleware(req, res, next);
+  it('should return 401 if authorization header is missing', async () => {
+    await authMiddleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -40,23 +36,23 @@ describe('authMiddleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if token is invalid', () => {
+  it('should return 401 if token is invalid', async () => {
     req.headers.authorization = 'Bearer invalid-token';
     vi.mocked(jwt.verify).mockImplementation(() => {
       throw new Error('invalid token');
     });
 
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if token is valid but missing sub claim', () => {
+  it('should return 401 if token is valid but missing sub claim', async () => {
     req.headers.authorization = 'Bearer no-sub-token';
     vi.mocked(jwt.verify).mockReturnValue({} as any);
 
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -67,13 +63,13 @@ describe('authMiddleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should call next and set userId if token is valid', () => {
+  it('should call next and set userId if token is valid', async () => {
     req.headers.authorization = 'Bearer valid-token';
     vi.mocked(jwt.verify).mockReturnValue({ sub: 'user-123' } as any);
 
-    authMiddleware(req, res, next);
+    await authMiddleware(req, res, next);
 
-    expect(jwt.verify).toHaveBeenCalledWith('valid-token', env.SUPABASE_JWT_SECRET);
+    expect(jwt.verify).toHaveBeenCalledWith('valid-token', 'mock-public-key', { algorithms: ['ES256'] });
     expect(req.userId).toBe('user-123');
     expect(next).toHaveBeenCalled();
   });

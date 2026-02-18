@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { randomUUID } from 'crypto';
 import { env } from './lib/env.js';
 import authRoutes from './routes/authRoutes.js';
+import { configRouter } from './routes/configRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/config', configRouter);
 
 // Error handling
 app.use(errorMiddleware);

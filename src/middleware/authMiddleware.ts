@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../lib/env.js';
+import { getSupabasePublicKey } from '../lib/jwks.js';
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -17,7 +17,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, env.SUPABASE_JWT_SECRET) as { sub?: string };
+    const publicKey = await getSupabasePublicKey();
+    const payload = jwt.verify(token, publicKey, { algorithms: ['ES256'] }) as { sub?: string };
     if (!payload.sub) {
       return res.status(401).json({
         error: {
