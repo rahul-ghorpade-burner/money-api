@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { env } from './lib/env.js';
 import authRoutes from './routes/authRoutes.js';
 import { configRouter } from './routes/configRoutes.js';
+import { expenseRouter } from './routes/expenseRoutes.js';
 import { errorMiddleware } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/config', configRouter);
+app.use('/api/expenses', expenseRouter);
 
 // Error handling
 app.use(errorMiddleware);
